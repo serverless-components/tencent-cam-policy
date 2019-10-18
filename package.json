@@ -1,0 +1,28 @@
+{
+  "name": "@serverless/tencent-CAM-Role-Component",
+  "description": "Tencent Cloud Serverless CAM Role",
+  "version": "0.0.1",
+  "main": "./serverless.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --fix --cache"
+  },
+  "author": "Tencent Cloud, Inc.",
+  "license": "Apache",
+  "dependencies": {
+    "@serverless/core": "^1.0.0",
+    "tencentcloud-sdk-nodejs": "^3.0.87",
+    "ramda": "^0.26.1"
+  },
+  "devDependencies": {
+    "babel-eslint": "9.0.0",
+    "eslint": "5.6.0",
+    "eslint-config-prettier": "^3.6.0",
+    "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-prettier": "^3.0.1",
+    "prettier": "^1.18.2"
+  }
+}
