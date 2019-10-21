@@ -1,5 +1,5 @@
 {
-  "name": "@serverless/tencent-CAM-Role-Component",
+  "name": "@serverless/tencent-cam-policy",
   "description": "Tencent Cloud Serverless CAM Role",
   "version": "0.0.1",
   "main": "./serverless.js",
