@@ -1,4 +1,4 @@
-# Tencent-cam-role-component
+# Tencent-cam-role
 
 Easily provision Tencent CAM policy using [Serverless Components](https://github.com/serverless/components).
 
@@ -41,7 +41,7 @@ TENCENT_SECRET_KEY=123
 name: my-app
 
 myRole:
-  component: "@serverless/tencent-cam-policy-component"
+  component: "@serverless/tencent-cam-policy"
   inputs:
     name: my-policy
     description: A policy created by Serverless Components
