@@ -1,4 +1,4 @@
-# Tencent-cam-role
+# Tencent-cam-policy
 
 Easily provision Tencent CAM policy using [Serverless Components](https://github.com/serverless/components).
 
