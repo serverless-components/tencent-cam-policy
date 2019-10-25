@@ -71,8 +71,10 @@ class TencentCamPolicy extends Component {
 				let pagePolicList
 				let pagePolicyCount = 1
 
+				// cam could not get policyId through policyName, has not this type api
+				// so use ListPolicies api to get  policy list
 				while (pagePolicyCount > 0) {
-					await utils.sleep(500)
+					await utils.sleep(500) // Prevent overclocking
 					body = {
 						Rp: 200,
 						Page: page
@@ -85,11 +87,11 @@ class TencentCamPolicy extends Component {
 						for (let j = 0; j < pagePolicList.List.length; j++) {
 							if (pagePolicList.List[j].PolicyName == params.PolicyName) {
 								params.PolicyId = pagePolicList.List[j].PolicyId
-								break
+								break // Policyid found, break loop
 							}
 						}
 						if (params.PolicyId) {
-							break
+							break // Policyid found, break loop
 						}
 					} catch (e) {
 						throw 'GetPolicyIdError: ' + e
@@ -117,8 +119,6 @@ class TencentCamPolicy extends Component {
 		this.state.id = outputs.id = policyId
 		await this.save()
 
-		// this.cli.outputs(outputs)
-		// console.log(outputs)
 		return outputs
 	}
 

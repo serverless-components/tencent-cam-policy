@@ -1,7 +1,7 @@
 {
   "name": "@serverless/tencent-cam-policy",
-  "description": "Tencent Cloud Serverless CAM Role",
-  "version": "0.0.1",
+  "description": "Tencent Cloud Serverless CAM policy",
+  "version": "1.0.0",
   "main": "./serverless.js",
   "publishConfig": {
     "access": "public"

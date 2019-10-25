@@ -53,7 +53,6 @@ myRole:
     name: my-policy
     description: A policy created by Serverless Components
     policy:
-      version: 2.0
       statement:
         - effect: allow
           action:
