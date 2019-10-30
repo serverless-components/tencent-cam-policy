@@ -1,7 +1,7 @@
-const {mergeDeepRight} = require('ramda')
+const { mergeDeepRight } = require('ramda')
 const util = require('util')
-const {utils} = require('@serverless/core')
-const {Component} = require('@serverless/core')
+const { utils } = require('@serverless/core')
+const { Component } = require('@serverless/core')
 const tencentcloud = require('tencentcloud-sdk-nodejs')
 const CamClient = tencentcloud.cam.v20190116.Client
 const camModels = tencentcloud.cam.v20190116.Models
@@ -9,151 +9,162 @@ const ClientProfile = require('tencentcloud-sdk-nodejs/tencentcloud/common/profi
 const HttpProfile = require('tencentcloud-sdk-nodejs/tencentcloud/common/profile/http_profile.js')
 
 class TencentCamPolicy extends Component {
-	getCamClient(credentials, region) {
-		// create cam client
+  getCamClient(credentials, region) {
+    // create cam client
 
-		const secret_id = credentials.SecretId
-		const secret_key = credentials.SecretKey
-		const cred = new tencentcloud.common.Credential(secret_id, secret_key)
-		const httpProfile = new HttpProfile()
-		httpProfile.reqTimeout = 30
-		const clientProfile = new ClientProfile('HmacSHA256', httpProfile)
-		return new CamClient(cred, region, clientProfile)
-	}
+    const secret_id = credentials.SecretId
+    const secret_key = credentials.SecretKey
+    const cred = new tencentcloud.common.Credential(secret_id, secret_key)
+    const httpProfile = new HttpProfile()
+    httpProfile.reqTimeout = 30
+    const clientProfile = new ClientProfile('HmacSHA256', httpProfile)
+    return new CamClient(cred, region, clientProfile)
+  }
 
-	async default(inputs = {}) {
-		this.context.status(`Deploying`)
+  async default(inputs = {}) {
+    this.context.status(`Deploying`)
 
-		// Defaults
-		const defaults = {
-			name: this.state.name || this.context.resourceId(),
-			description: '',
-			region: 'ap-guangzhou',
-			path: null,
-			policy: {
-				version: '2.0',
-				statement: [
-					{
-						action: [],
-						resource: '*',
-						effect: 'allow'
-					}
-				]
-			},
+    // Defaults
+    const defaults = {
+      name: this.state.name || this.context.resourceId(),
+      description: '',
+      region: 'ap-guangzhou',
+      path: null,
+      policy: {
+        version: '2.0',
+        statement: [
+          {
+            action: [],
+            resource: '*',
+            effect: 'allow'
+          }
+        ]
+      }
+    }
 
-		}
+    inputs = mergeDeepRight(defaults, inputs)
 
-		inputs = mergeDeepRight(defaults, inputs)
+    // Ensure Document is a string
+    inputs.policy =
+      typeof inputs.policy === 'string' ? inputs.policy : JSON.stringify(inputs.policy)
 
-		// Ensure Document is a string
-		inputs.policy = typeof inputs.policy === 'string' ? inputs.policy : JSON.stringify(inputs.policy)
+    const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
 
-		const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
+    const params = {
+      PolicyName: inputs.name,
+      PolicyDocument: inputs.policy,
+      Description: inputs.description
+    }
 
-		let params = {
-			PolicyName: inputs.name,
-			PolicyDocument: inputs.policy,
-			Description: inputs.description
-		}
+    let result
+    let handler
+    if (this.state && this.state.id) {
+      params.PolicyId = this.state.id
+      const updateReq = new camModels.UpdatePolicyRequest()
+      updateReq.from_json_string(JSON.stringify(params))
+      handler = util.promisify(cam.UpdatePolicy.bind(cam))
+      try {
+        await handler(updateReq)
+      } catch (e) {
+        throw 'UpdatePolicyError: ' + e
+      }
+    } else {
+      const createReq = new camModels.CreatePolicyRequest()
+      createReq.from_json_string(JSON.stringify(params))
+      handler = util.promisify(cam.CreatePolicy.bind(cam))
+      try {
+        result = await handler(createReq)
+      } catch (error) {
+        if (error.code && error.code == 'FailedOperation.PolicyNameInUse') {
+          const req = new camModels.ListPoliciesRequest()
+          let body
+          let page = 1
+          let pagePolicList
+          let pagePolicyCount = 1
 
-		let result
-		const creatReq = new camModels.CreatePolicyRequest()
-		creatReq.from_json_string(JSON.stringify(params))
-		const handler = util.promisify(cam.CreatePolicy.bind(cam))
-		try {
-			result = await handler(creatReq)
-		} catch (error) {
-			if (error.code && error.code == "FailedOperation.PolicyNameInUse") {
-				const req = new camModels.ListPoliciesRequest()
-				let body
-				let handler
-				let page = 1
-				let pagePolicList
-				let pagePolicyCount = 1
+          // cam could not get policyId through policyName, has not this type api
+          // so use ListPolicies api to get  policy list
+          while (pagePolicyCount > 0) {
+            await utils.sleep(500) // Prevent overclocking
+            body = {
+              Rp: 200,
+              Page: page
+            }
+            req.from_json_string(JSON.stringify(body))
+            handler = util.promisify(cam.ListPolicies.bind(cam))
+            try {
+              pagePolicList = await handler(req)
+              pagePolicyCount = pagePolicList.List.length
+              for (let j = 0; j < pagePolicList.List.length; j++) {
+                if (pagePolicList.List[j].PolicyName == params.PolicyName) {
+                  params.PolicyId = pagePolicList.List[j].PolicyId
+                  break // Policyid found, break loop
+                }
+              }
+              if (params.PolicyId) {
+                break // Policyid found, break loop
+              }
+            } catch (e) {
+              throw 'GetPolicyIdError: ' + e
+            }
+            page = page + 1
+          }
 
-				// cam could not get policyId through policyName, has not this type api
-				// so use ListPolicies api to get  policy list
-				while (pagePolicyCount > 0) {
-					await utils.sleep(500) // Prevent overclocking
-					body = {
-						Rp: 200,
-						Page: page
-					}
-					req.from_json_string(JSON.stringify(body))
-					handler = util.promisify(cam.ListPolicies.bind(cam))
-					try {
-						pagePolicList = await handler(req)
-						pagePolicyCount = pagePolicList.List.length
-						for (let j = 0; j < pagePolicList.List.length; j++) {
-							if (pagePolicList.List[j].PolicyName == params.PolicyName) {
-								params.PolicyId = pagePolicList.List[j].PolicyId
-								break // Policyid found, break loop
-							}
-						}
-						if (params.PolicyId) {
-							break // Policyid found, break loop
-						}
-					} catch (e) {
-						throw 'GetPolicyIdError: ' + e
-					}
-					page = page + 1
-				}
+          const updateReq = new camModels.UpdatePolicyRequest()
+          updateReq.from_json_string(JSON.stringify(params))
+          handler = util.promisify(cam.UpdatePolicy.bind(cam))
+          try {
+            await handler(updateReq)
+          } catch (e) {
+            throw 'UpdatePolicyError: ' + e
+          }
+        } else {
+          throw error
+        }
+      }
+    }
 
-				const updateReq = new camModels.UpdatePolicyRequest()
-				updateReq.from_json_string(JSON.stringify(params))
-				handler = util.promisify(cam.UpdatePolicy.bind(cam))
-				try {
-					await handler(updateReq)
-				} catch (e) {
-					throw 'UpdatePolicyError: ' + e
-				}
+    // Save state and set outputs
+    const outputs = {}
+    const policyId = result && result.PolicyId ? result.PolicyId : params.PolicyId
+    this.state.id = outputs.id = policyId
+    await this.save()
 
-			} else {
-				throw error
-			}
-		}
+    return outputs
+  }
 
-		// Save state and set outputs
-		const outputs = {}
-		const policyId = result && result.PolicyId ? result.PolicyId : params.PolicyId
-		this.state.id = outputs.id = policyId
-		await this.save()
+  /**
+   * Remove
+   * @param  {Object}  [inputs={}]
+   * @return {Promise}
+   */
 
-		return outputs
-	}
+  async remove(inputs = {}) {
+    if (!this.state.id) {
+      return {}
+    }
 
-	/**
-	 * Remove
-	 * @param  {Object}  [inputs={}]
-	 * @return {Promise}
-	 */
+    const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
 
-	async remove(inputs = {}) {
-		if (!this.state.id) {
-			return {}
-		}
+    const params = {
+      PolicyId: [this.state.id]
+    }
 
-		const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
+    const req = new camModels.DeletePolicyRequest()
+    req.from_json_string(JSON.stringify(params))
+    const handler = util.promisify(cam.DeletePolicy.bind(cam))
+    try {
+      await handler(req)
+    } catch (error) {
+      throw error
+    }
 
-		const params = {
-			PolicyId: [this.state.id]
-		}
+    // Clear state
+    this.state = {}
+    await this.save()
 
-		const req = new camModels.DeletePolicyRequest()
-		req.from_json_string(JSON.stringify(params))
-		const handler = util.promisify(cam.DeletePolicy.bind(cam))
-		try {
-			await handler(req)
-		} catch (error) {
-			throw error
-		}
-
-		// Clear state
-		this.state = {}
-		await this.save()
-
-		return {}
-	}
+    return {}
+  }
 }
 
 module.exports = TencentCamPolicy
