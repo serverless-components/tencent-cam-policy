@@ -11,6 +11,7 @@
 2. [创建](#2-创建)
 3. [配置](#3-配置)
 4. [部署](#4-部署)
+5. [移除](#5-移除)
 
 ### 1. 安装
 
@@ -50,9 +51,7 @@ TENCENT_APP_ID=123
 ```yml
 # serverless.yml
 
-name: my-app
-
-myRole:
+myPolicy:
   component: "@serverless/tencent-cam-policy"
   inputs:
     name: my-policy
@@ -63,25 +62,40 @@ myRole:
           action:
             - cos:GetService
           resource: '*'
+
 ```
+* [点击此处查看配置文档](https://github.com/serverless-tencent/tencent-cam-policy/blob/master/docs/configure.md)
+
 
 ### 4. 部署
 
 通过如下命令进行部署，并查看部署过程中的信息
 ```console
-$ serverless --debug
+$ sls --debug
+
+  DEBUG ─ Resolving the template's static variables.
+  DEBUG ─ Collecting components from the template.
+  DEBUG ─ Downloading any NPM components found in the template.
+  DEBUG ─ Analyzing the template's components dependencies.
+  DEBUG ─ Creating the template's components graph.
+  DEBUG ─ Syncing template state.
+  DEBUG ─ Executing the template's components graph.
+
+  myPolicy: 
+    id: 27710257
+
+  7s › myPolicy › done
 ```
 
 
-### 测试案例
-```text
-DFOUNDERLIU-MB0:tencent-cos-component-master dfounderliu$ sls
+### 5. 移除
+```console
+$ sls remove --debug
 
-  id: 27280629
+  DEBUG ─ Flushing template state and removing all components.
 
-  0s › TencentCamPolicy › done
+  1s › myPolicy › done
 
-DFOUNDERLIU-MB0:tencent-cos-component-master dfounderliu$ sls remove
 
 ```
 

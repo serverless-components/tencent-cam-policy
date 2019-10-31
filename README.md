@@ -8,6 +8,7 @@ Easily provision Tencent CAM policy using [Serverless Components](https://github
 2. [Create](#2-create)
 3. [Configure](#3-configure)
 4. [Deploy](#4-deploy)
+5. [Remove](#5-remove)
 
 &nbsp;
 
@@ -35,6 +36,7 @@ If you already login in, find  `TENCENT_SECRET_ID` and `TENCENT_SECRET_KEY`  in 
 # .env
 TENCENT_SECRET_ID=123
 TENCENT_SECRET_KEY=123
+TENCENT_APP_ID=123
 ```
 
 ### 3. Configure
@@ -42,9 +44,7 @@ TENCENT_SECRET_KEY=123
 ```yml
 # serverless.yml
 
-name: my-app
-
-myRole:
+myPolicy:
   component: "@serverless/tencent-cam-policy"
   inputs:
     name: my-policy
@@ -55,25 +55,42 @@ myRole:
           action:
             - cos:GetService
           resource: '*'
+
 ```
+* [Click here to view the configuration document](https://github.com/serverless-tencent/tencent-cam-policy/blob/master/docs/configure.md)
+
+
 
 ### 4. Deploy
 
-```shell
-$ serverless
+```console
+$ sls --debug
+
+  DEBUG ─ Resolving the template's static variables.
+  DEBUG ─ Collecting components from the template.
+  DEBUG ─ Downloading any NPM components found in the template.
+  DEBUG ─ Analyzing the template's components dependencies.
+  DEBUG ─ Creating the template's components graph.
+  DEBUG ─ Syncing template state.
+  DEBUG ─ Executing the template's components graph.
+
+  myPolicy: 
+    id: 27710257
+
+  7s › myPolicy › done
+
 ```
 
 &nbsp;
 
-### Test
-```text
-DFOUNDERLIU-MB0:tencent-cos-component-master dfounderliu$ sls
+### 5. Remove
+```console
+$ sls remove --debug
 
-  id: 27280629
+  DEBUG ─ Flushing template state and removing all components.
 
-  0s › TencentCamPolicy › done
+  1s › myPolicy › done
 
-DFOUNDERLIU-MB0:tencent-cos-component-master dfounderliu$ sls remove
 
 ```
 
