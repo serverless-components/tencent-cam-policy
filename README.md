@@ -91,7 +91,6 @@ $ sls remove --debug
 
   1s › myPolicy › done
 
-DFOUNDERLIU-MB0:tencent-cos-component-master dfounderliu$ sls remove
 
 ```
 
