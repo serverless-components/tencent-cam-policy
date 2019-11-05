@@ -49,6 +49,7 @@ class TencentCamPolicy extends Component {
       typeof inputs.policy === 'string' ? inputs.policy : JSON.stringify(inputs.policy)
 
     const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
+    cam.sdkVersion = 'ServerlessComponent'
 
     const params = {
       PolicyName: inputs.name,
