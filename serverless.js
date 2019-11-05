@@ -146,7 +146,8 @@ class TencentCamPolicy extends Component {
     }
 
     const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
-
+    cam.sdkVersion = 'ServerlessComponent'
+    
     const params = {
       PolicyId: [this.state.id]
     }
