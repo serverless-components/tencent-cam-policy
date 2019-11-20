@@ -40,7 +40,6 @@ If you already login in, find  `TENCENT_SECRET_ID` and `TENCENT_SECRET_KEY`  in 
 # .env
 TENCENT_SECRET_ID=123
 TENCENT_SECRET_KEY=123
-TENCENT_APP_ID=123
 ```
 
 ### 3. Configure
