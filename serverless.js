@@ -1,5 +1,6 @@
 const { mergeDeepRight } = require('ramda')
 const util = require('util')
+const fs = require('fs')
 const { utils } = require('@serverless/core')
 const { Component } = require('@serverless/core')
 const TencentLogin = require('tencent-login')
