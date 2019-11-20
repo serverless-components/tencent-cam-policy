@@ -101,10 +101,6 @@ class TencentCamPolicy extends Component {
       tencent = await this.getTempKey(tencent)
       this.context.credentials.tencent = tencent
     }
-    if (!this.context.credentials.tencent.AppId) {
-      const appId = await this.getAppid(tencent)
-      this.context.credentials.tencent.AppId = appId.AppId
-    }
 
     // Ensure Document is a string
     inputs.policy =
