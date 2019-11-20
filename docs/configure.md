@@ -6,7 +6,7 @@
 # serverless.yml
 
 myPolicy:
-  component: "@serverless/tencent-cam-policy"
+  component: "@tencent-serverless/tencent-cam-policy-beta"
   inputs:
     name: my-policy
     description: A policy created by Serverless Components
