@@ -2,6 +2,7 @@ const { mergeDeepRight } = require('ramda')
 const util = require('util')
 const { utils } = require('@serverless/core')
 const { Component } = require('@serverless/core')
+const TencentLogin = require('tencent-login')
 const tencentcloud = require('tencentcloud-sdk-nodejs')
 const CamClient = tencentcloud.cam.v20190116.Client
 const camModels = tencentcloud.cam.v20190116.Models
@@ -14,11 +15,62 @@ class TencentCamPolicy extends Component {
 
     const secret_id = credentials.SecretId
     const secret_key = credentials.SecretKey
-    const cred = new tencentcloud.common.Credential(secret_id, secret_key)
+    const cred = credentials.token
+      ? new tencentcloud.common.Credential(secret_id, secret_key, credentials.token)
+      : new tencentcloud.common.Credential(secret_id, secret_key)
     const httpProfile = new HttpProfile()
     httpProfile.reqTimeout = 30
     const clientProfile = new ClientProfile('HmacSHA256', httpProfile)
     return new CamClient(cred, region, clientProfile)
+  }
+
+  async doLogin() {
+    const login = new TencentLogin()
+    const tencent_credentials = await login.login()
+    if (tencent_credentials) {
+      tencent_credentials.timestamp = Date.now() / 1000
+      const tencent_credentials_json = JSON.stringify(tencent_credentials)
+      try {
+        const tencent = {
+          SecretId: tencent_credentials.tencent_secret_id,
+          SecretKey: tencent_credentials.tencent_secret_key,
+          AppId: tencent_credentials.tencent_appid,
+          token: tencent_credentials.tencent_token,
+          timestamp: tencent_credentials.timestamp
+        }
+        await fs.writeFileSync('./.env_temp', tencent_credentials_json)
+        this.context.debug(
+          'The temporary key is saved successfully, and the validity period is two hours.'
+        )
+        return tencent
+      } catch (e) {
+        throw 'Error getting temporary key: ' + e
+      }
+    }
+  }
+
+  async getTempKey() {
+    const that = this
+    try {
+      const data = await fs.readFileSync('./.env_temp', 'utf8')
+      try {
+        const tencent = {}
+        const tencent_credentials_read = JSON.parse(data)
+        if (Date.now() / 1000 - tencent_credentials_read.timestamp <= 7000) {
+          tencent.SecretId = tencent_credentials_read.tencent_secret_id
+          tencent.SecretKey = tencent_credentials_read.tencent_secret_key
+          tencent.AppId = tencent_credentials_read.tencent_appid
+          tencent.token = tencent_credentials_read.tencent_token
+          tencent.timestamp = tencent_credentials_read.timestamp
+          return tencent
+        }
+        return await that.doLogin()
+      } catch (e) {
+        return await that.doLogin()
+      }
+    } catch (e) {
+      return await that.doLogin()
+    }
   }
 
   async default(inputs = {}) {
@@ -43,6 +95,16 @@ class TencentCamPolicy extends Component {
     }
 
     inputs = mergeDeepRight(defaults, inputs)
+
+    let { tencent } = this.context.credentials
+    if (!tencent) {
+      tencent = await this.getTempKey(tencent)
+      this.context.credentials.tencent = tencent
+    }
+    if (!this.context.credentials.tencent.AppId) {
+      const appId = await this.getAppid(tencent)
+      this.context.credentials.tencent.AppId = appId.AppId
+    }
 
     // Ensure Document is a string
     inputs.policy =
@@ -147,7 +209,7 @@ class TencentCamPolicy extends Component {
 
     const cam = this.getCamClient(this.context.credentials.tencent, inputs.region)
     cam.sdkVersion = 'ServerlessComponent'
-    
+
     const params = {
       PolicyId: [this.state.id]
     }
