@@ -2,6 +2,7 @@ const { mergeDeepRight } = require('ramda')
 const util = require('util')
 const { utils } = require('@serverless/core')
 const { Component } = require('@serverless/core')
+const tencentAuth = require('serverless-tencent-auth-tool')
 const tencentcloud = require('tencentcloud-sdk-nodejs')
 const CamClient = tencentcloud.cam.v20190116.Client
 const camModels = tencentcloud.cam.v20190116.Models
@@ -22,6 +23,15 @@ class TencentCamPolicy extends Component {
   }
 
   async default(inputs = {}) {
+    // login
+    const auth = new tencentAuth()
+    this.context.credentials.tencent = await auth.doAuth(this.context.credentials.tencent, {
+      client: 'tencent-cam-policy',
+      remark: inputs.fromClientRemark,
+      project: this.context.instance ? this.context.instance.id : undefined,
+      action: 'default'
+    })
+
     this.context.status(`Deploying`)
 
     // Defaults
@@ -141,6 +151,15 @@ class TencentCamPolicy extends Component {
    */
 
   async remove(inputs = {}) {
+    // login
+    const auth = new tencentAuth()
+    this.context.credentials.tencent = await auth.doAuth(this.context.credentials.tencent, {
+      client: 'tencent-cam-policy',
+      remark: inputs.fromClientRemark,
+      project: this.context.instance ? this.context.instance.id : undefined,
+      action: 'remove'
+    })
+
     if (!this.state.id) {
       return {}
     }

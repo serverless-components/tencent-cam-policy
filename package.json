@@ -1,7 +1,7 @@
 {
   "name": "@serverless/tencent-cam-policy",
   "description": "Tencent Cloud Serverless CAM policy",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "main": "./serverless.js",
   "publishConfig": {
     "access": "public"
@@ -16,7 +16,8 @@
     "@serverless/core": "^1.0.0",
     "tencentcloud-sdk-nodejs": "^3.0.87",
     "ramda": "^0.26.1",
-    "tencent-login": "^0.1.2"
+    "tencent-login": "^0.1.2",
+    "serverless-tencent-auth-tool": "^1.0.14"
   },
   "devDependencies": {
     "babel-eslint": "9.0.0",
